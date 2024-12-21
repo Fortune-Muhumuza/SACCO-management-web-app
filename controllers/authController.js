@@ -1,32 +1,31 @@
-const User = require('../models/User');
-const session = require('express-session');
+const User = require("../models/User");
+const { generateToken } = require("../utils/jwtUtils");
 
 exports.register = async (req, res) => {
-    try {
-        const user = new User({
-            name: req.body.name,
-            password: req.body.password
-        });
-        const result = await user.save();
-        res.send(result);
-        console.log(result);
-    } catch (error) {
-        res.send('error');
-    }
-}
+  try {
+    const { name, email, password, role } = req.body;
+
+    const user = new User({ name, email, password, role });
+    await user.save();
+
+    res.status(201).json({ message: "User registered successfully!" });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
 
 exports.login = async (req, res) => {
-    const user = await User.findOne({ name: req.body.name }).exec();
-    if (!user) {
-        res.send('Sorry, username does not exist')
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user || !(await user.comparePassword(password))) {
+      return res.status(401).json({ error: "Invalid credentials!" });
     }
-    const correctPassword = user.comparePassword(req.body.password, user.password);
-    if (!correctPassword) {
-        res.send('wrong password');
-    } else {
-        req.session.userID = userID;
-        req.session.save();
-        console.log('logged is as: ' + user.name);
-        res.redirect('/me');
-    }
-}
+
+    const token = generateToken({ id: user._id, role: user.role });
+    res.status(200).json({ token, user: { name: user.name, email: user.email } });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
