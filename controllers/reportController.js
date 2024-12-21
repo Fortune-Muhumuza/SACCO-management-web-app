@@ -1,6 +1,7 @@
 const Member = require("../models/Member");
 const Loan = require("../models/Loan");
 const Savings = require("../models/Savings");
+const { Parser } = require("json2csv");
 
 exports.generateReport = async (req, res) => {
   try {
@@ -52,6 +53,27 @@ const generateAdvancedReport = async (req, res) => {
       res.status(500).json({ error: error.message });
     }
   };
+
   
+
+
+const downloadReport = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    const savings = await Savings.find({ date: { $gte: new Date(startDate), $lte: new Date(endDate) } });
+
+    const fields = ["memberId", "amount", "date"];
+    const parser = new Parser({ fields });
+    const csv = parser.parse(savings);
+
+    res.header("Content-Type", "text/csv");
+    res.attachment("savings-report.csv");
+    res.send(csv);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 
 
