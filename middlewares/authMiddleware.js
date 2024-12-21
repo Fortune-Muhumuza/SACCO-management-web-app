@@ -14,9 +14,22 @@ exports.authenticate = (req, res, next) => {
   }
 };
 
-exports.authorize = (roles) => (req, res, next) => {
-  if (!roles.includes(req.user.role)) {
-    return res.status(403).json({ error: "You do not have permission!" });
-  }
-  next();
-};
+exports.authorize = (permissions) => (req, res, next) => {
+    const userRole = req.user.role;
+    const userPermissions = rolePermissions[userRole];
+  
+    const hasPermission = permissions.some((perm) => userPermissions.includes(perm));
+  
+    if (!hasPermission) {
+      return res.status(403).json({ error: "You do not have permission!" });
+    }
+  
+    next();
+  };
+  
+  // Example Role-Permission Mapping
+  const rolePermissions = {
+    admin: ["ADD_MEMBER", "UPDATE_MEMBER", "DELETE_MEMBER", "VIEW_REPORTS"],
+    member: ["VIEW_SAVINGS", "REQUEST_LOAN"],
+  };
+  
